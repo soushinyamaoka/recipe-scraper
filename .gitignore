@@ -1,0 +1,30 @@
+# 環境変数（実クレデンシャルを含む）
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+
+# データ・ログ（VPS上で自動生成）
+data/
+logs/
+
+# Claude Code ローカル設定（個人環境依存のため非共有）
+.claude/settings.local.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ChatGPT Work / AIファイル受け渡し
+/work/ai_handoff/

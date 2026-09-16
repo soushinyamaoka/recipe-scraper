@@ -1,0 +1,14 @@
+schema_version: 1
+app: recipe-scraper
+
+logging:
+  destinations: [stdout]
+  format: plain
+  schema_version: null
+  contains_pii: unknown
+  note: >
+    2026-09-16時点でVPS共通ログ規約（1行1JSON構造化、stdout/stderr、job_start/job_end等）は
+    未対応。他3アプリ（coop-api / recipe-generator / recipe-search）は2026-08-30に対応済みだが、
+    本アプリは未着手。対応時は application_logging_standard.md に従うこと。
+
+# その他のruntime contractセクションは未整備（2026-09-16のGit化タスクの範囲外）。
