@@ -4,7 +4,7 @@ app: recipe-scraper
 canonical_repo: https://github.com/soushinyamaoka/recipe-scraper.git
 canonical_ref: main
 updated_at: 2026-09-28
-verified_against_runtime: null   # 本ファイルの記述はVPS管理側の記録（systems/recipe_scraper.md、monitoring_matrix.md、2026-09-27のレビュー時read-only確認）に基づく宣言。アプリ側で実機照合はしていないため日付を埋めない。
+verified_against_runtime: null   # VPS管理側がVPS1と照合済みの項目（language_runtime、tls、logging.contains_pii、deploy.entryの実行停止状態）を2026-09-28に反映した。ただし訂正後の全体再照合が済むまでnullを維持する（VPS管理側の指示）。
 
 runtime:
   type: systemd
@@ -12,7 +12,7 @@ runtime:
   working_directory: /opt/apps/recipe-scraper-api
   user: recipe-scraper    # /etc/systemd/system/recipe-scraper-api.service.d/runtime-user.conf で指定。sourceとvenvはdeploy所有のまま、runtimeは読み取り・実行のみ
   group: recipe-scraper
-  language_runtime: null  # VPS上のPythonバージョンは未照合
+  language_runtime: python3.10.12   # VPS管理側がVPS1と照合済み（2026-09-28）
   os_packages: []
   restart_policy: always
 
@@ -24,7 +24,7 @@ network:
   public:
     - url: https://recipe-scraper.homehub-tools.dedyn.io
       upstream: 127.0.0.1:8004
-      tls: null   # 証明書方式は未照合（HTTPはHTTPSへ301）
+      tls: letsencrypt   # VPS管理側がVPS1と照合済み（2026-09-28）。HTTPはHTTPSへ301
   health:
     internal:
       path: /health
@@ -61,8 +61,10 @@ deploy:
     共通 deploy.bat recipe-scraper-api <LOCAL_DIR> が deploy-files.txt 記載の2ファイル
     （recipe_scraper_api_app.py、requirements.txt）を /opt/apps/recipe-scraper-api/ へscp転送し、
     sshでVPS1の /opt/apps/deploy.sh recipe-scraper-api を実行する（venvへ pip install -r requirements.txt、
-    service再起動）。.env は転送しない。ラッパーの deploy-recipe-scraper-api.bat は存在しない旧pathを
-    指しており、VPS管理側の方針で意図的に未修正（2026-09-28時点）。/opt/apps/deploy.sh はlegacy route。
+    service再起動）。.env は転送しない。専用ラッパー deploy-recipe-scraper-api.bat のLOCAL_DIRはVPS管理側で
+    現行パスへ修正済みだが、2026-09-28時点でVPS管理側の判断により明示的に実行停止中（誤実行防止のための
+    意図的な停止であり、pathの不備によるものではない）。実行再開はVPS管理側の判断・承認による。
+    /opt/apps/deploy.sh はlegacy route。
   downtime: brief-restart
   rollback: >
     反映前に保全した旧2ファイルを同じ経路で再転送し、/opt/apps/deploy.sh recipe-scraper-api を再実行して
@@ -72,7 +74,8 @@ logging:
   destinations: [stdout]
   format: plain
   schema_version: null
-  contains_pii: unknown
+  contains_pii: true   # VPS管理側の判断（2026-09-28）。抽出対象URLや取得結果がログに残り得るため
+  rotation: null   # アプリ側でログローテーションを持たない
   note: >
     VPS共通ログ規約（1行1JSON構造化、stdout/stderr、job_start/job_end等）は未対応（2026-09-28時点）。
     対応時は application_logging_standard.md に従うこと。
