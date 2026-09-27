@@ -4,7 +4,7 @@ app: recipe-scraper
 canonical_repo: https://github.com/soushinyamaoka/recipe-scraper.git
 canonical_ref: main
 updated_at: 2026-09-28
-verified_against_runtime: null   # VPS管理側がVPS1と照合済みの項目（language_runtime、tls、logging.contains_pii、deploy.entryの実行停止状態）を2026-09-28に反映した。ただし訂正後の全体再照合が済むまでnullを維持する（VPS管理側の指示）。
+verified_against_runtime: 2026-09-28   # VPS管理側が訂正後のcontractをVPS1と再照合済み。production反映・再起動なし。
 
 runtime:
   type: systemd
