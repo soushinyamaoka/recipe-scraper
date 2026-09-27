@@ -6,10 +6,10 @@
 
 recipe_scraper_api_app.py
 requirements.txt
-.env
 
 # 注意: 以下はアップロード対象外
 # .env.example   ... 初回デプロイ時のみ必要
+# .env           ... production安全化のためdeploy artifactに含めない（値を含むため）
 # coop-api.service ... systemdに登録済み
 # venv/          ... VPS上で作成済み
 # data/          ... VPS上のデータ

@@ -8,6 +8,7 @@ import json
 import os
 import re
 from urllib.parse import urlparse
+from typing import Callable
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Query
@@ -300,6 +301,58 @@ def extract_source(url: str) -> str:
     return re.sub(r"^www\.", "", host)
 
 
+def _normalize_site_text(node) -> str:
+    """HTML要素のテキストを空白1個区切りに正規化する"""
+    return re.sub(r"\s+", " ", node.get_text()).strip()
+
+
+def _extract_sirogohan(soup: BeautifulSoup) -> dict | None:
+    """白ごはん.com固有のHTML構造から材料と手順を取得する"""
+    name_tag = soup.find("h1", itemprop="name")
+    name = _normalize_site_text(name_tag) if name_tag else None
+
+    ingredients: list[str] = []
+    material = soup.find("section", class_="material")
+    if material:
+        for ul in material.find_all("ul"):
+            group = None
+            for class_name in ul.get("class", []):
+                match = re.fullmatch(r"([A-Za-z])-list", class_name)
+                if match:
+                    group = match.group(1).upper()
+                    break
+            for item in ul.find_all("li"):
+                text = _normalize_site_text(item)
+                if text:
+                    ingredients.append(f"{group}: {text}" if group else text)
+
+    instructions: list[str] = []
+    howto = soup.find("section", class_="howto")
+    if howto:
+        for block in howto.find_all("div", class_="howto-block"):
+            if block.get("id") == "recipe_movie":
+                continue
+            for paragraph in block.find_all("p"):
+                if "note-text" in paragraph.get("class", []):
+                    continue
+                text = _normalize_site_text(paragraph)
+                if text:
+                    instructions.append(text)
+
+    if not ingredients and not instructions:
+        return None
+    return {
+        "name": name or None,
+        "ingredients": ingredients or None,
+        "instructions": instructions or None,
+    }
+
+
+SITE_EXTRACTORS: dict[str, Callable[[BeautifulSoup], dict | None]] = {
+    "sirogohan.com": _extract_sirogohan,
+}
+
+
 # ==============================================================
 # エンドポイント
 # ==============================================================
@@ -415,13 +468,24 @@ async def _extract_from_web(url: str, source: str) -> dict:
 
     json_ld = extract_recipe_from_json_ld(soup)
 
+    ingredients = json_ld.get("ingredients") if json_ld else None
+    instructions = json_ld.get("instructions") if json_ld else None
+
+    site_recipe = None
+    if not ingredients and not instructions:
+        extractor = SITE_EXTRACTORS.get(source)
+        if extractor:
+            site_recipe = extractor(soup)
+            if site_recipe:
+                ingredients = site_recipe.get("ingredients")
+                instructions = site_recipe.get("instructions")
+
     title = (
-        (json_ld.get("name") if json_ld else None)
+        (site_recipe.get("name") if site_recipe else None)
+        or (json_ld.get("name") if json_ld else None)
         or extract_title_from_og(soup)
         or extract_title_from_title_tag(soup)
     )
-    ingredients = json_ld.get("ingredients") if json_ld else None
-    instructions = json_ld.get("instructions") if json_ld else None
 
     if not title:
         return {
