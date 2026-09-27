@@ -8,7 +8,7 @@ app: recipe-scraper
 source_branch: main
 source_commit: 84892f7f11f7cb9273154fcc0f499307b78a3d7e
 production_baseline_commit: null
-release_commits: b47e3d6d4a5778cc96cb791209a0ea7214e2808c, 84892f7f11f7cb9273154fcc0f499307b78a3d7e, 54c63e96730ed9c3f4361b22e4e09e39814bae97, 16e86ae500a4cdfe92279f8b63dab06edc0e252d
+release_commits: b47e3d6d4a5778cc96cb791209a0ea7214e2808c, 84892f7f11f7cb9273154fcc0f499307b78a3d7e, 54c63e96730ed9c3f4361b22e4e09e39814bae97, 16e86ae500a4cdfe92279f8b63dab06edc0e252d, 1641d462024dd63e4c7d8b66d772583a20ae0af7
 remote: https://github.com/soushinyamaoka/recipe-scraper.git
 impact_level: L2
 status: ready_for_review
@@ -116,7 +116,7 @@ server_impact: notify
 
 - production baseline: `production_deployments.yaml`にrecipe-scraperのエントリがなく、本アプリがこれまでにVPS管理側の管理下でproduction反映された記録が確認できない。この点はVPS管理側での確認が必要。
 - テストはClaudeが検証環境を用意して実施し、上記「Health・テスト」に記載のとおりpass。
-- リモート: 2026-09-27にユーザーがGitHubリポジトリ（`https://github.com/soushinyamaoka/recipe-scraper.git`）を作成し、origin設定・pushを実施した。local HEAD = origin/main = `54c63e9`で一致確認済み。
+- リモート: 2026-09-27にユーザーがGitHubリポジトリ（`https://github.com/soushinyamaoka/recipe-scraper.git`）を作成し、origin設定・pushを実施した。本commit時点のlocal HEADをpush後、local HEAD = origin/main が一致することを確認する（VPS管理側のread-only preflightでの実remote照合はレビュー側で実施）。
 
 未確認・該当なしの理由: production baselineの正本記録が存在しないため、既存baselineとの差分という形の確認ができない。
 
