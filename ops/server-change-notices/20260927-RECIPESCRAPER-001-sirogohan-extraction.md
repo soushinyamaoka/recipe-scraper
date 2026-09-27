@@ -6,9 +6,10 @@ policy_bundle_version: 2026-09-04.1
 notice_id: 20260927-RECIPESCRAPER-001
 app: recipe-scraper
 source_branch: main
-source_commit: 84892f7（完全SHAはローカルGit履歴参照。remote未設定のためpush不可）
+source_commit: 84892f7f11f7cb9273154fcc0f499307b78a3d7e（実装）
 production_baseline_commit: null（production_deployments.yamlにrecipe-scraperのエントリなし。本アプリはproduction反映実績自体が未確認）
-release_commits: b47e3d6（Git化・初回commit）, 84892f7（本notice対象の変更）
+release_commits: b47e3d6d4a5778cc96cb791209a0ea7214e2808c（Git化・初回commit）, 84892f7f11f7cb9273154fcc0f499307b78a3d7e（本notice対象の変更）, 54c63e96730ed9c3f4361b22e4e09e39814bae97（本notice文書のcommit）
+remote: https://github.com/soushinyamaoka/recipe-scraper.git （2026-09-27にorigin設定・push済み、local HEAD = origin/main = 54c63e96730ed9c3f4361b22e4e09e39814bae97）
 impact_level: L2
 status: ready_for_review
 created_by: Codex（実装）、Claude（検証・通知書修正）
@@ -100,13 +101,12 @@ server_impact: notify
 
 - production baseline: `production_deployments.yaml`にrecipe-scraperのエントリがなく、本アプリがこれまでにVPS管理側の管理下でproduction反映された記録が確認できない。この点はVPS管理側での確認が必要。
 - テストはClaudeが検証環境を用意して実施し、上記「Health・テスト」に記載のとおりpass。
-- このリポジトリはGitHubリモート未設定のため、remoteへの反映はできていない（push不可）。VPS管理側へ渡す場合、リモート設定または別の受け渡し方法の確認が必要。
+- リモート: 2026-09-27にユーザーがGitHubリポジトリ（`https://github.com/soushinyamaoka/recipe-scraper.git`）を作成し、origin設定・pushを実施した。local HEAD = origin/main = `54c63e9`で一致確認済み。
 
 未確認・該当なしの理由: production baselineの正本記録が存在しないため、既存baselineとの差分という形の確認ができない。
 
 ## 未解決事項
 
-- recipe-scraperのGitHubリモートが未設定。VPS管理側への正式な提出方法（リモート経由か、別の受け渡し方法か）を確認する必要がある。
 - production baselineの正本記録（`production_deployments.yaml`）にrecipe-scraperのエントリがない状態自体を、VPS管理側で確認・整備するか判断が必要。
 - 実VPS上での動作確認は別途必要。
 
@@ -117,7 +117,7 @@ VPS管理側の確認後に決定。
 ## VPS管理チャットへの引き継ぎ
 
 - 引き継ぎ要否: 必要
-- ユーザーへの案内: 表示済み（定型文どおり、ただしremote未設定の旨を別途申し添える）
+- ユーザーへの案内: 表示済み（定型文どおり）
 - VPS管理チャットへ渡すローカル絶対path: `C:\work\PRG\ZZ_Other\Python\recipe_scraper_api\ops\server-change-notices\20260927-RECIPESCRAPER-001-sirogohan-extraction.md`
 
 ## Approval
