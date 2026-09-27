@@ -6,16 +6,23 @@ policy_bundle_version: 2026-09-04.1
 notice_id: 20260927-RECIPESCRAPER-001
 app: recipe-scraper
 source_branch: main
-source_commit: 84892f7f11f7cb9273154fcc0f499307b78a3d7e（実装）
-production_baseline_commit: null（production_deployments.yamlにrecipe-scraperのエントリなし。本アプリはproduction反映実績自体が未確認）
-release_commits: b47e3d6d4a5778cc96cb791209a0ea7214e2808c（Git化・初回commit）, 84892f7f11f7cb9273154fcc0f499307b78a3d7e（本notice対象の変更）, 54c63e96730ed9c3f4361b22e4e09e39814bae97（本notice文書のcommit）
-remote: https://github.com/soushinyamaoka/recipe-scraper.git （2026-09-27にorigin設定・push済み、local HEAD = origin/main = 54c63e96730ed9c3f4361b22e4e09e39814bae97）
+source_commit: 84892f7f11f7cb9273154fcc0f499307b78a3d7e
+production_baseline_commit: null
+release_commits: b47e3d6d4a5778cc96cb791209a0ea7214e2808c, 84892f7f11f7cb9273154fcc0f499307b78a3d7e, 54c63e96730ed9c3f4361b22e4e09e39814bae97, 16e86ae500a4cdfe92279f8b63dab06edc0e252d
+remote: https://github.com/soushinyamaoka/recipe-scraper.git
 impact_level: L2
 status: ready_for_review
 created_by: Codex（実装）、Claude（検証・通知書修正）
 production_change: required
 vps_management_handoff: required
 deployment_status: not_started
+
+## commit・remoteの補足（RS-001-B01対応）
+
+- `source_commit`は実装commit（サイト別抽出・manifest修正）。
+- `production_baseline_commit`が`null`なのは、`production_deployments.yaml`にrecipe-scraperのエントリがなく、これまでのproduction反映実績が正本記録として確認できないため。
+- `release_commits`は、Git化時の初回commitから本notice文書のcommitまでの全件。
+- `remote`は2026-09-27にユーザーが新規作成したGitHubリポジトリ。local HEAD・cached `origin/main`・実remote `refs/heads/main`が一致していることを、提出のたびに確認している（直近の一致は「提出前セルフチェック」参照）。
 
 ## 変更概要
 
@@ -51,7 +58,7 @@ server_impact: notify
 
 - 必要性: あり
 - 想定作業: VPS管理レビューと、別途承認されたアプリ変更のdeploy。本task・本検証ではproductionへの接続・変更は行っていない
-- downtime: コードの挙動自体によるdowntimeは想定されない。deploy手順の詳細はVPS管理側で確認
+- downtime: `pip install`とservice再起動の間、短い停止が起こり得る（下記「Deploy・rollback」参照）
 - maintenance window: 未定。利用者影響は想定されない
 
 ## 利用者への影響
@@ -74,12 +81,20 @@ server_impact: notify
 - restore確認: 該当なし
 - backward compatibility: JSON-LDで材料か作り方のどちらかが取得できるサイトの既存経路は変更しない
 
-## Deploy・rollback
+## Deploy・rollback（RS-001-B02対応）
 
-- deploy前提: VPS管理レビューと、別途のproduction承認
-- deploy手順の変更: manifestが、文書化済みの2ファイルのみになる（`.env`除外）
-- rollback方法: 承認済みのVPS手順で、直前のアプリソースとmanifestへ戻す
-- rollback不能条件: 特になし
+- **実際のdeploy経路**: `deploy-recipe-scraper-api.bat`（`C:\work\PRG\Sakura\Dev\deploy\recipe-api\`配下）は`LOCAL_DIR=C:\work\PRG\Python\recipe_scraper_api`を指しているが、このパスは存在しない（現在のリポジトリは`C:\work\PRG\ZZ_Other\Python\recipe_scraper_api`）。**この`.bat`はそのままでは使えない。** 本noticeではこのwrapperの修正は行わない（別途のrelease計画・承認事項とする）。
+  - 使える経路は、共通`deploy.bat recipe-scraper-api <正しいLOCAL_DIR>`を直接実行する方法。これは`deploy-files.txt`記載の2ファイル（`recipe_scraper_api_app.py`、`requirements.txt`）をVPS1へscp転送した後、sshでVPS1側の`/opt/apps/deploy.sh recipe-scraper-api`を実行する。このscriptがvenvへ`pip install -r requirements.txt`を行い、`recipe-scraper-api`のsystemd serviceを再起動する。
+  - `.env`はこの経路で転送されない（`deploy-files.txt`から除外済み、既存VPS上の`.env`はそのまま）。
+- deploy前提: VPS管理レビュー受理、上記経路の実行版計画の確定、別途のproduction承認。
+- deploy手順:
+  1. 反映前に、VPS1上の現行`recipe_scraper_api_app.py`・`requirements.txt`のSHA-256を記録する（レビュー時点の値: `recipe_scraper_api_app.py` = `34d675804bca548d7d1284f1c06ba76eb2fd38af25ea514d276da72ed51819c6`、`requirements.txt` = `9486827792744f1d378a7a084aa6f25eec53f2415f94b7552df95e713cf24eeb`。実施時に再確認する）。
+  2. `deploy.bat recipe-scraper-api <正しいLOCAL_DIR>`で2ファイルを転送し、`/opt/apps/deploy.sh recipe-scraper-api`を実行する。
+  3. `pip install`とservice再起動が完了するまでの間、短い停止が起こり得る。
+  4. 反映後、`/health`（内部・公開の両方）がHTTP 200を返すことを確認する。
+  5. 実際の`sirogohan.com`のURLで`/api/recipe/extract`を呼び、材料・作り方が返ることを確認する（canary）。
+- rollback方法: 手順1で記録したhashに対応する旧2ファイルを保存しておき、それらを同じ`deploy.bat`経路で再度転送・`/opt/apps/deploy.sh recipe-scraper-api`を再実行して依存を再適用・service再起動する。再起動後、`/health`がHTTP 200を返すことを確認する。
+- rollback不能条件: 反映前に旧2ファイルを保存していない場合、hashの記録だけでは内容そのものを復元できない。
 
 ## Health・テスト
 
@@ -123,6 +138,6 @@ VPS管理側の確認後に決定。
 ## Approval
 
 - app owner: task 20260927-007で実装承認済み（ユーザー指示）。テスト検証と通知書修正はClaudeが実施。
-- VPS management review: 未実施（新規提出）
+- VPS management review: 初回`blocked`（RS-001-B01・B02）。本更新で両点に対応し、再審査依頼として提出
 - production approval: 未取得
 - related task_id: 20260927-007
